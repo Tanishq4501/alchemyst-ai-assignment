@@ -12,7 +12,7 @@ on:
       - "terraform/**"
 
 env:
-  TF_VERSION: "1.15.3"
+  TF_VERSION: "1.9.5"
   WORKING_DIR: terraform/envs/prod
 
 permissions:
@@ -31,12 +31,6 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: terraform fmt check
         working-directory: ${{ env.WORKING_DIR }}
@@ -60,10 +54,9 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
 
       - name: tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-          working_directory: ${{ env.WORKING_DIR }}
-          soft_fail: true   # warn, don't block (remove for stricter enforcement)
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          tfsec ${{ env.WORKING_DIR }} --soft-fail
 
       - name: checkov
         uses: bridgecrewio/checkov-action@v12

@@ -13,7 +13,6 @@ on:
 
 env:
   REGION: us-central1
-  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
 
 jobs:
   build:
@@ -25,46 +24,42 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write  # for Workload Identity Federation
+      id-token: write  # for Workload Identity Federation (push only)
 
     steps:
       - uses: actions/checkout@v4
 
+      # Build always — no registry auth needed for a local build
+      - name: Build image
+        run: |
+          docker build \
+            -t alchemist/${{ matrix.worker }}:ci \
+            docker/${{ matrix.worker }}
+
+      # Auth + push only when merging to main and secrets are present
       - name: Authenticate to GCP
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for Artifact Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-      - name: Set image tag
-        id: tag
+      - name: Tag & push image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "tag=pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build image
-        run: |
-          docker build \
-            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ steps.tag.outputs.tag }} \
-            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/alchemist/${{ matrix.worker }}:latest \
-            docker/${{ matrix.worker }}
-
-      # Only push on merge to main (not on PRs)
-      - name: Push image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ steps.tag.outputs.tag }}
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/alchemist/${{ matrix.worker }}:latest
+          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/alchemist"
+          docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
+          docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:latest"
+          docker push "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
+          docker push "${REGISTRY}/${{ matrix.worker }}:latest"
 
       - name: Output image digest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
         run: |
           docker inspect \
-            ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ steps.tag.outputs.tag }} \
+            "${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ github.sha }}" \
             --format='{{index .RepoDigests 0}}'
