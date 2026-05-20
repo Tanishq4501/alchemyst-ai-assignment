@@ -8,14 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # This runs at BUILD time so the 300 MB GGUF file is a cached layer.
 # Workers cold-start in ~30 s instead of waiting for a HuggingFace download.
 FROM deps AS model
-RUN python - << 'EOF'
-from transformers import AutoModelForCausalLM, AutoTokenizer
-model_id  = "ggml-org/gemma-3-270m-GGUF"
-gguf_file = "gemma-3-270m-Q8_0.gguf"
-AutoTokenizer.from_pretrained(model_id, gguf_file=gguf_file)
-AutoModelForCausalLM.from_pretrained(model_id, gguf_file=gguf_file)
-print("Model cached successfully")
-EOF
+COPY download_model.py .
+RUN python download_model.py
 
 # ── Stage 3: lean runtime image ───────────────────────────────────────────────
 FROM python:3.11-slim

@@ -1,8 +1,8 @@
 # ── Stage 1: install production dependencies ──────────────────────────────────
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY package.json ./
+RUN npm install --omit=dev
 
 # ── Stage 2: runtime image ────────────────────────────────────────────────────
 FROM node:20-alpine
