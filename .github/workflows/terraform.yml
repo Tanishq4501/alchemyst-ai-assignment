@@ -127,11 +127,17 @@ jobs:
         run: exit 1
 
   # ── Apply (main branch, manual approval via GitHub Environment) ──────────────
+  # NOTE: requires a "production" Environment in GitHub Settings > Environments
+  # with WIF_PROVIDER + WIF_SERVICE_ACCOUNT secrets configured.
+  # The job will be skipped automatically if those secrets are empty.
   apply:
     name: Apply
     runs-on: ubuntu-latest
     needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      vars.ENABLE_APPLY == 'true'
     environment: production   # requires manual approval in GitHub Settings > Environments
     steps:
       - uses: actions/checkout@v4

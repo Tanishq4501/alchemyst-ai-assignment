@@ -37,20 +37,20 @@ jobs:
             -t alchemist/${{ matrix.worker }}:ci \
             docker/${{ matrix.worker }}
 
-      # Auth + push only when merging to main and secrets are present
+      # Auth + push only on merges to main (secrets context not allowed in if:)
       - name: Authenticate to GCP
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for Artifact Registry
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Tag & push image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/alchemist"
           docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
@@ -59,7 +59,7 @@ jobs:
           docker push "${REGISTRY}/${{ matrix.worker }}:latest"
 
       - name: Output image digest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker inspect \
             "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ github.sha }}" \
