@@ -1,6 +1,8 @@
 name: Build & Push Docker Images
 
 on:
+  workflow_dispatch:   # allow manual trigger from the Actions tab
+
   push:
     branches: [main]
     paths:

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ── Stage 1: install production dependencies ──────────────────────────────────
 FROM node:20-alpine AS deps
 WORKDIR /app

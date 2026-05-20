@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ── Stage 1: install Python deps ──────────────────────────────────────────────
 FROM python:3.11-slim AS deps
 WORKDIR /app
