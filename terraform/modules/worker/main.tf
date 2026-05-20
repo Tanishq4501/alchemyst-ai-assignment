@@ -25,7 +25,7 @@ resource "google_compute_instance" "worker" {
     CONTAINER_NAME = var.name
   }
 
-  metadata_startup_script = file("${path.module}/../../scripts/startup-worker.sh")
+  metadata_startup_script = file("${path.module}/../../../scripts/startup-worker.sh")
 
   service_account {
     scopes = ["cloud-platform"]

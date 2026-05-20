@@ -25,7 +25,7 @@ resource "google_compute_instance" "api_gateway" {
     access_config {}
   }
 
-  metadata_startup_script = file("${path.module}/../../scripts/startup-engine.sh")
+  metadata_startup_script = file("${path.module}/../../../scripts/startup-engine.sh")
 
   service_account {
     scopes = ["cloud-platform"]
