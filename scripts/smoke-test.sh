@@ -39,11 +39,14 @@ while [ "${elapsed}" -lt "${MAX_WAIT}" ]; do
     --max-time "${INFER_TIMEOUT}" 2>/dev/null || echo "000")
 
   if [ "${http_code}" = "200" ]; then
-    # Validate the response contains a 'result' key
+    # Validate the response contains a 'result' key.
+    # Priority: jq (most accurate) → grep (most portable, works on Windows Git Bash)
+    # python3 is intentionally skipped: native Windows python3 cannot resolve
+    # POSIX /tmp paths produced by Git Bash curl -o.
     if command -v jq &>/dev/null; then
       result=$(jq -r '.result // empty' /tmp/smoke_response.json 2>/dev/null)
     else
-      result=$(python3 -c "import json,sys; d=json.load(open('/tmp/smoke_response.json')); print(d.get('result',''))" 2>/dev/null || echo "")
+      result=$(grep -o '"result"' /tmp/smoke_response.json 2>/dev/null || echo "")
     fi
 
     if [ -n "${result}" ]; then

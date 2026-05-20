@@ -2,6 +2,74 @@
 
 Deploys the [`quickstart`](../quickstart) project across three GCP VMs inside a private subnet, wires the workers together via the iii RPC engine, and exposes model inference through a public JSON HTTP API.
 
+> **Hit a problem?** See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — 18 real errors encountered during this deployment, each with root cause analysis and the exact fix applied.
+
+---
+
+## Live Deployment
+
+> **Status: ✅ RUNNING** 
+
+### Endpoint
+
+```
+POST http://35.254.159.49/v1/chat/completions
+Content-Type: application/json
+```
+
+**Try it now:**
+
+```bash
+curl -s -X POST http://35.254.159.49/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Say hello."}]}'
+```
+
+**Response shape:**
+
+```json
+{"result":{"text":"..."}}
+```
+
+### Infrastructure at a glance
+
+| Resource | Value |
+|---|---|
+| GCP Project | `elite-elevator-452411-b6` |
+| Region / Zone | `us-central1` / `us-central1-a` |
+| Public IP | `35.254.159.49` |
+| VPC | `alchemist-vpc` — private subnet `10.0.1.0/24` |
+| Terraform state | `gs://alchemist-tf-state/envs/prod/` |
+| Artifact Registry | `us-central1-docker.pkg.dev/elite-elevator-452411-b6/alchemist` |
+
+### VMs
+
+| VM | Internal IP | External IP | Role |
+|---|---|---|---|
+| `api-gateway` | `10.0.1.2` | `35.254.159.49` | nginx `:80` → iii-engine `:3111` / `:49134` |
+| `caller-worker` | `10.0.1.3` | none | TypeScript worker — routes HTTP → RPC |
+| `inference-worker` | `10.0.1.4` | none | Python worker — runs Gemma-3-270M GGUF |
+
+### Docker images (Artifact Registry)
+
+| Image | Tag | Size |
+|---|---|---|
+| `alchemist/caller-worker` | `latest` | ~250 MB |
+| `alchemist/inference-worker` | `latest` | ~3 GB (model baked in) |
+
+### Smoke test result
+
+```
+[smoke-test] PASS — API returned a valid response after 0s
+[smoke-test] Response: {"result":{"text":"Say OK...."}}
+```
+
+Run it yourself:
+
+```bash
+bash scripts/smoke-test.sh 35.254.159.49
+```
+
 ---
 
 ## Architecture
@@ -481,6 +549,35 @@ gcloud iam service-accounts add-iam-policy-binding \
 **6. Observability** — The iii engine already emits OpenTelemetry spans. Wire the exporter to Cloud Trace instead of `memory`. Add Fluent Bit → Cloud Logging for structured worker logs. Set up alerting on p99 latency and error rate.
 
 **7. Secrets management** — Store any future credentials in Secret Manager, accessed by the VM service accounts at startup. No secrets in metadata or environment variables.
+
+---
+
+## Troubleshooting
+
+A separate document captures every real error hit during deployment with root cause analysis and the exact fix applied.
+
+| # | Error | Category |
+|---|---|---|
+| 1 | Heredoc `FROM` parse error in Dockerfile | Docker |
+| 2 | `npm ci` fails — `package-lock.json` not found | Docker |
+| 3 | IAM Service Account Credentials API disabled | GCP IAM |
+| 4 | `artifactregistry.repositories.uploadArtifacts` denied | GCP IAM |
+| 5 | GCS `storage.objects.list` denied | GCP IAM |
+| 6 | Invalid Terraform version `1.15.3` | Terraform |
+| 7 | Startup script `file()` path resolves to wrong directory | Terraform |
+| 8 | Subnet / Router `alreadyExists` after destroy + re-apply | Terraform |
+| 9 | Artifact Registry repo `alreadyExists` — 409 conflict | Terraform |
+| 10 | tfsec crashes on Terraform 1.5+ `import {}` blocks | Terraform |
+| 11 | `tfsec-action@v1` not found (archived repo) | GitHub Actions |
+| 12 | `secrets.*` in `if:` expressions illegal | GitHub Actions |
+| 13 | Docker build auth fails in 8 s on PRs | GitHub Actions |
+| 14 | Terraform plan/apply skipped on `workflow_dispatch` | GitHub Actions |
+| 15 | `HOME: parameter not set` — iii installer fails on GCE | Startup Script |
+| 16 | nginx serves default welcome page instead of proxying | Startup Script |
+| 17 | Workers pull wrong SHA tag — container not found | Worker Runtime |
+| 18 | Smoke test loops "Not ready" despite HTTP 200 | Smoke Test |
+
+→ **[Full details, root causes, and fixes: TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
 ---
 
