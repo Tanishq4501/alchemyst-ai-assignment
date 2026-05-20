@@ -155,6 +155,18 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform init
 
+      # Import resources that may already exist in GCP but not in Terraform state.
+      # Using `|| true` so the step never fails (import is a no-op if already in state).
+      - name: Import pre-existing resources
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          terraform import \
+            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
+            -var="image_tag=${{ github.sha }}" \
+            module.engine.google_artifact_registry_repository.workers \
+            projects/${{ vars.GCP_PROJECT_ID }}/locations/us-central1/repositories/alchemist \
+            || true
+
       - name: terraform apply
         working-directory: ${{ env.WORKING_DIR }}
         run: |
