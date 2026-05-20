@@ -1,3 +1,10 @@
+# Import the Artifact Registry repo that was pre-created manually.
+# Terraform 1.5+ import blocks are idempotent — no-op if already in state.
+import {
+  to = module.engine.google_artifact_registry_repository.workers
+  id = "projects/${var.project_id}/locations/us-central1/repositories/alchemist"
+}
+
 module "network" {
   source      = "../../modules/network"
   project     = var.project_id
