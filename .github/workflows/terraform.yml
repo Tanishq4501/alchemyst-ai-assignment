@@ -18,6 +18,7 @@ on:
 env:
   TF_VERSION: "1.9.5"
   WORKING_DIR: terraform/envs/prod
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # silence Node.js 20 deprecation
 
 permissions:
   contents: read
@@ -96,7 +97,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           terraform plan \
-            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="image_tag=${{ github.sha }}" \
             -no-color \
             -out=tfplan 2>&1 | tee plan.txt
@@ -153,7 +154,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           terraform apply \
-            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="image_tag=${{ github.sha }}" \
             -auto-approve
 

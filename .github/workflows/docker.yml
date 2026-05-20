@@ -13,6 +13,7 @@ on:
 
 env:
   REGION: us-central1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # silence Node.js 20 deprecation
 
 jobs:
   build:
@@ -38,28 +39,28 @@ jobs:
 
       # Auth + push only when merging to main and secrets are present
       - name: Authenticate to GCP
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for Artifact Registry
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Tag & push image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
         run: |
-          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/alchemist"
+          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/alchemist"
           docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
           docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:latest"
           docker push "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
           docker push "${REGISTRY}/${{ matrix.worker }}:latest"
 
       - name: Output image digest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GCP_PROJECT_ID != ''
         run: |
           docker inspect \
-            "${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ github.sha }}" \
+            "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ github.sha }}" \
             --format='{{index .RepoDigests 0}}'
