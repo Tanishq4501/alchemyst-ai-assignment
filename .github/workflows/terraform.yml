@@ -98,7 +98,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           terraform plan \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
             -var="image_tag=${{ github.sha }}" \
             -no-color \
             -out=tfplan 2>&1 | tee plan.txt
@@ -159,7 +159,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           terraform apply \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
             -var="image_tag=${{ github.sha }}" \
             -auto-approve
 

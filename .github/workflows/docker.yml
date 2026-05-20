@@ -52,7 +52,7 @@ jobs:
       - name: Tag & push image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/alchemist"
+          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/alchemist"
           docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
           docker tag alchemist/${{ matrix.worker }}:ci "${REGISTRY}/${{ matrix.worker }}:latest"
           docker push "${REGISTRY}/${{ matrix.worker }}:${{ github.sha }}"
@@ -62,5 +62,5 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker inspect \
-            "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ github.sha }}" \
+            "${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/alchemist/${{ matrix.worker }}:${{ github.sha }}" \
             --format='{{index .RepoDigests 0}}'
