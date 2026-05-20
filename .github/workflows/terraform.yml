@@ -100,7 +100,7 @@ jobs:
         run: |
           terraform plan \
             -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
-            -var="image_tag=${{ github.sha }}" \
+            -var="image_tag=latest" \
             -no-color \
             -out=tfplan 2>&1 | tee plan.txt
           echo "exitcode=$?" >> "$GITHUB_OUTPUT"
@@ -161,7 +161,7 @@ jobs:
         run: |
           terraform apply \
             -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
-            -var="image_tag=${{ github.sha }}" \
+            -var="image_tag=latest" \
             -auto-approve
 
       - name: Run smoke test
