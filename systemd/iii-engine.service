@@ -1,0 +1,22 @@
+[Unit]
+Description=iii Engine (RPC hub + HTTP API on :3111, WebSocket on :49134)
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/iii-engine
+ExecStart=/root/.local/bin/iii --config /opt/iii-engine/config.yaml
+Restart=on-failure
+RestartSec=5
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+# Write logs to journald — tail with: journalctl -u iii-engine -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=iii-engine
+
+[Install]
+WantedBy=multi-user.target

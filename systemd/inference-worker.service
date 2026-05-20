@@ -1,0 +1,27 @@
+[Unit]
+Description=Inference Worker — Python (Gemma-3-270M GGUF via transformers)
+After=network.target
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/inference-worker
+ExecStart=/opt/inference-worker/venv/bin/python inference_worker.py
+Restart=on-failure
+RestartSec=15
+
+# III_URL must point to the iii engine internal IP — set by startup script
+Environment=III_URL=ws://ENGINE_IP_PLACEHOLDER:49134
+Environment=PATH=/opt/inference-worker/venv/bin:/usr/local/bin:/usr/bin:/bin
+
+# Model loading can take 30–60 s on cold start; give it time before restart
+TimeoutStartSec=120
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=inference-worker
+
+[Install]
+WantedBy=multi-user.target

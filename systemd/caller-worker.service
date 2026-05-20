@@ -1,0 +1,25 @@
+[Unit]
+Description=Caller Worker — TypeScript (HTTP trigger + inference::get_response RPC)
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/caller-worker
+ExecStart=/usr/bin/npx tsx src/worker.ts
+Restart=on-failure
+RestartSec=10
+
+# III_URL must point to the iii engine internal IP — set by startup script
+Environment=III_URL=ws://ENGINE_IP_PLACEHOLDER:49134
+Environment=NODE_OPTIONS=--experimental-vm-modules
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=caller-worker
+
+[Install]
+WantedBy=multi-user.target

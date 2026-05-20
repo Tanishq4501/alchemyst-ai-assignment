@@ -1,0 +1,54 @@
+# iii engine configuration for distributed deployment.
+# This config runs ONLY the built-in engine workers.
+# The inference-worker and caller-worker connect remotely via WebSocket (III_URL).
+# Docs: https://iii.dev/docs/how-to/configure-engine
+
+workers:
+  - name: iii-observability
+    config:
+      enabled: true
+      service_name: iii
+      exporter: memory
+      memory_max_spans: 10000
+      metrics_enabled: true
+      metrics_exporter: memory
+      logs_enabled: true
+      logs_exporter: memory
+      logs_console_output: true
+      sampling_ratio: 1.0
+
+  - name: iii-queue
+    config:
+      adapter:
+        name: builtin
+
+  - name: iii-state
+    config:
+      adapter:
+        name: kv
+        config:
+          store_method: file_based
+          file_path: /opt/iii-engine/data/state_store.db
+
+  - name: iii-http
+    config:
+      # Bind on all interfaces so nginx can proxy and workers can reach the
+      # WebSocket handshake endpoint from within the subnet.
+      port: 3111
+      host: 0.0.0.0
+      default_timeout: 120000
+      concurrency_request_limit: 1024
+      cors:
+        allowed_origins:
+          - '*'
+        allowed_methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+
+# NOTE: No worker_path entries here.
+# In the original quickstart config.yaml the engine launched workers as
+# subprocesses. In this distributed setup each worker is a long-running
+# process on its own VM that registers itself over WebSocket at startup.
