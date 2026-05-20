@@ -59,6 +59,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
 
       - name: tfsec
+        continue-on-error: true   # tfsec is deprecated and can't parse TF 1.5+ import blocks
         run: |
           curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
           tfsec ${{ env.WORKING_DIR }} --soft-fail
