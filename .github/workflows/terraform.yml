@@ -60,7 +60,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
 
       - name: tfsec
-        uses: aquasecurity/tfsec-action@v1
+        uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working_directory: ${{ env.WORKING_DIR }}
           soft_fail: true   # warn, don't block (remove for stricter enforcement)
