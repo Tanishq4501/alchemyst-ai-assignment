@@ -12,8 +12,10 @@ apt-get update -q
 apt-get install -y curl nginx
 
 # ── iii CLI ──────────────────────────────────────────────────────────────────
+# GCE startup scripts run without HOME set — export it explicitly.
+export HOME=/root
+export PATH="/root/.local/bin:/usr/local/bin:/usr/bin:/bin"
 curl -fsSL https://install.iii.dev/iii/main/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
 
 # ── iii project directory ────────────────────────────────────────────────────
 mkdir -p /opt/iii-engine/data
